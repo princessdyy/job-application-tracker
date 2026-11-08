@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Skills Match Engine - CareerPath{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h1 class="fw-bold fs-2 mb-1">Skills Compatibility Matcher</h1>
+        <div class="text-secondary">Calculate exact skill match percentages against open roles to focus your applications.</div>
+    </div>
+</div>
+
+<!-- Skill Entry Search Card -->
+<div class="content-card mb-4 p-4">
+    <form method="POST" action="{{ url_for('job_match') }}">
+        <label class="form-label fw-bold fs-6 mb-2 text-dark">Enter Your Skills & Technologies</label>
+        <div class="hero-search-card d-flex flex-column flex-md-row align-items-center mb-3">
+            <div class="d-flex align-items-center flex-grow-1 w-100 px-2">
+                <i class="bi bi-terminal text-muted me-2 fs-5"></i>
+                <input type="text" name="skills" id="skillInput" class="form-control hero-search-input" 
+                       placeholder="e.g. Python, SQL, Flask, Git, Docker, Tableau" 
+                       value="{{ user_skills_input }}" required>
+            </div>
+            <div class="w-100 w-md-auto mt-2 mt-md-0">
+                <button type="submit" class="btn-brand-primary w-100 py-3 px-4">
+                    <i class="bi bi-sliders me-1"></i> Calculate Matches
+                </button>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+            <span class="small text-muted fw-bold">Try popular skill sets:</span>
+            <button type="button" class="btn btn-sm btn-light border rounded-pill py-1 px-3 fw-semibold text-secondary" onclick="setPreset('Python, SQL, Flask, Git')">
+                Python Web Dev
+            </button>
+            <button type="button" class="btn btn-sm btn-light border rounded-pill py-1 px-3 fw-semibold text-secondary" onclick="setPreset('SQL, Python, Tableau, Excel, Data Modeling')">
+                Data Analyst
+            </button>
+            <button type="button" class="btn btn-sm btn-light border rounded-pill py-1 px-3 fw-semibold text-secondary" onclick="setPreset('HTML, CSS, JavaScript, Python, MySQL')">
+                Full Stack Intern
+            </button>
+            <button type="button" class="btn btn-sm btn-light border rounded-pill py-1 px-3 fw-semibold text-secondary" onclick="setPreset('AWS, Docker, Linux, Kubernetes, Terraform')">
+                Cloud / DevOps
+            </button>
+        </div>
+    </form>
+</div>
+
+{% if has_searched %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold mb-0 text-dark">
+            Matching Positions for: <span style="color: var(--brand-primary);">{{ user_skills_input }}</span>
+        </h4>
+        <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill fs-6 fw-semibold">
+            {{ match_results|length }} Roles Analyzed
+        </span>
+    </div>
+
+    {% if match_results %}
+        <div class="row g-3 mb-5">
+            {% for job in match_results %}
+            <div class="col-12">
+                <div class="content-card p-4">
+                    <div class="row align-items-center g-3">
+                        <!-- Rank & Percentage Score -->
+                        <div class="col-md-3 col-lg-2 text-md-center border-end">
+                            <div class="text-muted small fw-bold text-uppercase">Rank #{{ loop.index }}</div>
+                            <div class="fs-3 fw-bold mt-2 
+                                {% if job.match_percentage >= 75 %}text-success
+                                {% elif job.match_percentage >= 40 %}text-warning
+                                {% else %}text-danger{% endif %}">
+                                <i class="bi bi-award-fill me-1"></i> {{ job.match_percentage }}%
+                            </div>
+                            <div class="small text-secondary mt-1 fw-bold">
+                                {{ job.matched_count }} of {{ job.total_skills }} Skills
+                            </div>
+                        </div>
+
+                        <!-- Job & Company Details -->
+                        <div class="col-md-5 col-lg-6">
+                            <h4 class="fw-bold text-dark mb-1">
+                                {{ job.job_title }}
+                            </h4>
+                            <div class="text-secondary small mb-2">
+                                <span class="fw-bold text-dark">{{ job.company_name }}</span> 
+                                &bull; <i class="bi bi-geo-alt me-1"></i>{{ job.city }}, {{ job.state }}
+                                <span class="badge bg-light text-secondary border ms-2 fw-semibold">{{ job.job_type }}</span>
+                                {% if job.salary_min or job.salary_max %}
+                                    &bull; <span class="text-success fw-bold">{{ job.salary_min|currency }} &ndash; {{ job.salary_max|currency }}</span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Matched Skills Section -->
+                            <div class="mb-2">
+                                <span class="small fw-bold text-success me-2"><i class="bi bi-check-circle-fill me-1"></i>Matched Skills:</span>
+                                {% if job.matched_skills %}
+                                    {% for s in job.matched_skills %}
+                                        <span class="tech-tag matched"><i class="bi bi-check2 me-1"></i>{{ s }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-muted small fst-italic">None matched</span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Missing Skills Section -->
+                            <div>
+                                <span class="small fw-bold text-danger me-2"><i class="bi bi-dash-circle-fill me-1"></i>Skills to Develop:</span>
+                                {% if job.missing_skills %}
+                                    {% for s in job.missing_skills %}
+                                        <span class="tech-tag missing">{{ s }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-success small fw-bold fst-italic">Zero missing skills &bull; Perfect 100% Match!</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Action Controls -->
+                        <div class="col-md-4 col-lg-4 text-md-end d-flex flex-md-column justify-content-center gap-2">
+                            {% if job.job_url %}
+                                <a href="{{ job.job_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary text-center">
+                                    <i class="bi bi-box-arrow-up-right me-1"></i>View Job
+                                </a>
+                            {% endif %}
+                            <a href="{{ url_for('list_applications') }}" class="btn-brand-primary text-center py-2">
+                                <i class="bi bi-plus-lg me-1"></i>Track Application
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="content-card py-5 text-center text-muted mb-5">
+            <i class="bi bi-search fs-1 d-block mb-2 text-danger opacity-50"></i>
+            <h5>No Jobs Found</h5>
+            <p class="mb-0">Add jobs with skill requirements to calculate matches.</p>
+        </div>
+    {% endif %}
+
+{% else %}
+    <!-- Initial Guide Card -->
+    <div class="content-card text-center py-5 px-3 mb-5">
+        <div class="max-w-md mx-auto" style="max-width: 580px; margin: 0 auto;">
+            <div class="kpi-icon rose mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.7rem;">
+                <i class="bi bi-bullseye"></i>
+            </div>
+            <h4 class="fw-bold mb-2">How the Skills Matcher Works</h4>
+            <p class="text-secondary mb-3">
+                Enter your technical skills above. The engine scans the <code>requirements</code> JSON column for every role in MySQL and calculates an exact match score:
+            </p>
+            <div class="p-3 bg-light rounded-3 border text-start small font-monospace mb-3 text-secondary">
+                Match Percentage = (Matched Skills Count / Total Required Skills) &times; 100%
+            </div>
+            <p class="text-muted small mb-0">
+                Jobs are ranked from highest to lowest compatibility so you can focus on roles where your resume stands out.
+            </p>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function setPreset(skills) {
+    document.getElementById('skillInput').value = skills;
+}
+</script>
+{% endblock %}

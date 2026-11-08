@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block title %}Open Roles - CareerPath{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h1 class="fw-bold fs-2 mb-1">Open Positions & Opportunities</h1>
+        <div class="text-secondary">Browse active tech positions, review salary benchmarks, and examine core skill requirements.</div>
+    </div>
+    <button type="button" class="btn-brand-primary" data-bs-toggle="modal" data-bs-target="#addJobModal">
+        <i class="bi bi-plus-lg me-1"></i> Post / Add New Role
+    </button>
+</div>
+
+<!-- Company Filter Bar -->
+<div class="content-card mb-4 p-3">
+    <form method="GET" action="{{ url_for('list_jobs') }}" class="row g-2 align-items-center">
+        <div class="col-md-9 col-lg-10">
+            <div class="input-group">
+                <label class="input-group-text bg-white" for="companyFilter"><i class="bi bi-funnel me-1 text-muted"></i>Filter by Employer</label>
+                <select name="company_id" id="companyFilter" class="form-select">
+                    <option value="">All Companies ({{ jobs|length }} Total Positions Available)</option>
+                    {% for c in companies %}
+                        <option value="{{ c.company_id }}" {% if selected_company == c.company_id|string %}selected{% endif %}>
+                            {{ c.company_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="col-md-3 col-lg-2 d-flex gap-2">
+            <button type="submit" class="btn-brand-primary w-100 py-2">Apply Filter</button>
+            {% if selected_company %}
+                <a href="{{ url_for('list_jobs') }}" class="btn btn-outline-secondary">Reset</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Jobs List -->
+<div class="row g-3 mb-5">
+    {% if jobs %}
+        {% for job in jobs %}
+        <div class="col-12">
+            <div class="content-card p-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <h4 class="fw-bold mb-0 text-dark">{{ job.job_title }}</h4>
+                            <span class="badge bg-light text-secondary border fw-bold">{{ job.job_type }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <span class="fw-bold text-dark me-2">{{ job.company_name }}</span>
+                            {% if job.city or job.state %}
+                                <span class="text-muted"><i class="bi bi-geo-alt me-1"></i>{{ job.city }}{% if job.city and job.state %}, {% endif %}{{ job.state }}</span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Key Details Chips -->
+                        <div class="d-flex flex-wrap align-items-center mb-3 gap-3">
+                            <div class="text-success fw-bold small">
+                                <i class="bi bi-cash-stack me-1"></i>
+                                {% if job.salary_min or job.salary_max %}
+                                    {{ job.salary_min|currency }} &ndash; {{ job.salary_max|currency }} per annum
+                                {% else %}
+                                    Competitive Compensation
+                                {% endif %}
+                            </div>
+                            <div class="text-secondary small fw-medium">
+                                <i class="bi bi-calendar3 me-1"></i> Posted {{ job.date_posted or 'recently' }}
+                            </div>
+                            <div class="text-secondary small fw-medium">
+                                <i class="bi bi-send-check me-1 text-primary"></i> {{ job.app_count }} applications submitted
+                            </div>
+                        </div>
+
+                        <!-- Required Skills Tags -->
+                        <div>
+                            <span class="small fw-bold text-secondary me-1">Key Requirements:</span>
+                            {% set req_list = job.requirements|from_json %}
+                            {% if req_list %}
+                                {% for r in req_list %}
+                                    <span class="tech-tag required">{{ r }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted small fst-italic">None specified</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Right Action Buttons -->
+                    <div class="d-flex flex-row flex-md-column gap-2 align-items-stretch w-100 w-md-auto">
+                        <a href="{{ url_for('job_match', skills=(job.requirements|from_json)|join(', ')) }}" class="btn-brand-primary text-center py-2 px-3 text-nowrap">
+                            <i class="bi bi-bullseye me-1"></i> Match My Skills
+                        </a>
+                        {% if job.job_url %}
+                            <a href="{{ job.job_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary text-nowrap text-center">
+                                <i class="bi bi-box-arrow-up-right me-1"></i> View External Listing
+                            </a>
+                        {% endif %}
+                        <div class="d-flex gap-1 justify-content-end mt-1">
+                            <button type="button" class="btn btn-sm btn-outline-secondary w-50" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#editJobModal{{ job.job_id }}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger w-50" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#deleteJobModal{{ job.job_id }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Job Modal -->
+        <div class="modal fade" id="editJobModal{{ job.job_id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <form action="{{ url_for('edit_job', job_id=job.job_id) }}" method="POST">
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-bold">Edit Job: {{ job.job_title }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Company <span class="text-danger">*</span></label>
+                                    <select name="company_id" class="form-select" required>
+                                        {% for c in companies %}
+                                            <option value="{{ c.company_id }}" {% if c.company_id == job.company_id %}selected{% endif %}>
+                                                {{ c.company_name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Job Title <span class="text-danger">*</span></label>
+                                    <input type="text" name="job_title" class="form-control" value="{{ job.job_title }}" required maxlength="100">
+                                </div>
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Job Type</label>
+                                    <select name="job_type" class="form-select">
+                                        <option value="Full-time" {% if job.job_type == 'Full-time' %}selected{% endif %}>Full-time</option>
+                                        <option value="Part-time" {% if job.job_type == 'Part-time' %}selected{% endif %}>Part-time</option>
+                                        <option value="Contract" {% if job.job_type == 'Contract' %}selected{% endif %}>Contract</option>
+                                        <option value="Internship" {% if job.job_type == 'Internship' %}selected{% endif %}>Internship</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Min Salary ($)</label>
+                                    <input type="number" name="salary_min" class="form-control" value="{{ job.salary_min or '' }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Max Salary ($)</label>
+                                    <input type="number" name="salary_max" class="form-control" value="{{ job.salary_max or '' }}">
+                                </div>
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-8">
+                                    <label class="form-label fw-semibold">Job URL</label>
+                                    <input type="url" name="job_url" class="form-control" value="{{ job.job_url or '' }}" maxlength="300">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Date Posted</label>
+                                    <input type="date" name="date_posted" class="form-control" value="{{ job.date_posted }}">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Required Skills (Comma separated or JSON)</label>
+                                {% set reqs_joined = (job.requirements|from_json)|join(', ') %}
+                                <input type="text" name="requirements" class="form-control" value="{{ reqs_joined }}" placeholder="Python, SQL, Flask, Git">
+                                <div class="form-text small">Stored as a JSON array in MySQL. Used for the Match Engine.</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn-brand-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Job Modal -->
+        <div class="modal fade" id="deleteJobModal{{ job.job_id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form action="{{ url_for('delete_job', job_id=job.job_id) }}" method="POST">
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-bold text-danger"><i class="bi bi-trash-fill me-2"></i>Delete Job Posting</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to delete <strong>{{ job.job_title }}</strong> at {{ job.company_name }}?</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {% endfor %}
+    {% else %}
+        <div class="col-12 text-center py-5 text-muted">
+            <i class="bi bi-briefcase fs-1 d-block mb-2 text-danger opacity-50"></i>
+            <h5>No Jobs Found</h5>
+            <p class="mb-0">Add jobs with skill requirements to calculate matches and start tracking applications.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Add Job Modal -->
+<div class="modal fade" id="addJobModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form action="{{ url_for('add_job') }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Post New Job Position</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Company <span class="text-danger">*</span></label>
+                            <select name="company_id" class="form-select" required>
+                                <option value="" disabled selected>Select Company...</option>
+                                {% for c in companies %}
+                                    <option value="{{ c.company_id }}">{{ c.company_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Job Title <span class="text-danger">*</span></label>
+                            <input type="text" name="job_title" class="form-control" placeholder="e.g. Software Engineer, Data Analyst" required maxlength="100">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Job Type</label>
+                            <select name="job_type" class="form-select">
+                                <option value="Full-time" selected>Full-time</option>
+                                <option value="Part-time">Part-time</option>
+                                <option value="Contract">Contract</option>
+                                <option value="Internship">Internship</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Min Salary ($)</label>
+                            <input type="number" name="salary_min" class="form-control" placeholder="e.g. 70000">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Max Salary ($)</label>
+                            <input type="number" name="salary_max" class="form-control" placeholder="e.g. 95000">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Job URL</label>
+                            <input type="url" name="job_url" class="form-control" placeholder="https://careers.example.com/job/123" maxlength="300">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Date Posted</label>
+                            <input type="date" name="date_posted" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Required Skills (Comma-separated)</label>
+                        <input type="text" name="requirements" class="form-control" placeholder="Python, SQL, Flask, Git, Docker">
+                        <div class="form-text small">Enter skills separated by commas; stored as a JSON array in MySQL.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-brand-primary">Create Job</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

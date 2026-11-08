@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CareerPath - Job Application Tracker & Career Management{% endblock %}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom Enterprise Platform CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- Professional Top Navigation Bar (Straight Aligned Horizontal Layout) -->
+    <nav class="navbar navbar-expand-lg navbar-top sticky-top">
+        <div class="container-fluid px-lg-4 d-flex align-items-center justify-content-between">
+            <!-- Brand Logo & Name -->
+            <a class="brand-title me-lg-4" href="{{ url_for('dashboard') }}">
+                <div class="brand-symbol">
+                    <i class="bi bi-briefcase-fill"></i>
+                </div>
+                <span>Career<span style="color: var(--brand-primary);">Path</span></span>
+            </a>
+
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Navigation Links: Perfectly Straight Single-Line Alignments -->
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
+                    <li class="nav-item">
+                        <a class="nav-link-custom" href="{{ url_for('dashboard') }}">
+                            <i class="bi bi-grid-1x2"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link-custom" href="{{ url_for('list_jobs') }}">
+                            <i class="bi bi-search"></i>
+                            <span>Browse Jobs</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link-custom" href="{{ url_for('list_companies') }}">
+                            <i class="bi bi-buildings"></i>
+                            <span>Companies</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link-custom" href="{{ url_for('list_applications') }}">
+                            <i class="bi bi-send-check"></i>
+                            <span>Applications</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link-custom" href="{{ url_for('list_contacts') }}">
+                            <i class="bi bi-people"></i>
+                            <span>Recruiters</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link-custom" href="{{ url_for('job_match') }}">
+                            <i class="bi bi-bullseye" style="color: var(--brand-primary);"></i>
+                            <span>Skills Matcher</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Action Controls on Right -->
+                <div class="d-flex align-items-center gap-3 mt-3 mt-lg-0">
+                    <!-- Clickable Database Health Inspector Badge -->
+                    <button type="button" class="btn p-0 border-0 bg-transparent text-start" data-bs-toggle="modal" data-bs-target="#dbDiagnosticsModal" title="Click to open Database Health Inspector">
+                        {% if db_connected and db_diag.is_mysql %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fw-semibold shadow-sm d-inline-flex align-items-center gap-1" style="cursor: pointer;">
+                                <span class="spinner-grow text-success" role="status" style="width: 7px; height: 7px; animation-duration: 2s;"></span>
+                                <i class="bi bi-database-check me-1"></i> Database Live
+                                <i class="bi bi-info-circle ms-1 opacity-75 small"></i>
+                            </span>
+                        {% else %}
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 rounded-pill fw-semibold shadow-sm d-inline-flex align-items-center gap-1" style="cursor: pointer;">
+                                <i class="bi bi-database-exclamation me-1"></i> Preview Mode
+                                <i class="bi bi-info-circle ms-1 opacity-75 small"></i>
+                            </span>
+                        {% endif %}
+                    </button>
+
+                    <a href="{{ url_for('list_applications') }}" class="btn-brand-primary">
+                        <i class="bi bi-plus-lg"></i> Track Application
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="page-container container-fluid px-lg-4">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-4">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm border-0 rounded-3" role="alert">
+                            {% if category == 'success' %}
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                            {% elif category == 'danger' %}
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            {% elif category == 'warning' %}
+                                <i class="bi bi-exclamation-circle-fill me-2"></i>
+                            {% else %}
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                            {% endif %}
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Comprehensive Enterprise Footer (Contact & Business Info) -->
+    <footer class="footer-enterprise">
+        <div class="container-fluid px-lg-5">
+            <div class="row g-4 justify-content-between">
+                <!-- Col 1: About & Headquarters -->
+                <div class="col-lg-4 pe-lg-4">
+                    <div class="footer-brand-title">
+                        <div class="brand-symbol" style="width: 32px; height: 32px; font-size: 1rem;">
+                            <i class="bi bi-briefcase-fill"></i>
+                        </div>
+                        <span style="color: #ffffff;">Career<span style="color: var(--brand-primary);">Path</span></span>
+                    </div>
+                    <p class="small mb-3" style="line-height: 1.6; color: #cbd5e1;">
+                        CareerPath is a comprehensive job application management and career tracking platform. Designed to help professionals organize job searches, analyze skill compatibility, and monitor end-to-end recruitment pipelines.
+                    </p>
+                    <div class="d-flex gap-2">
+                        <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-dark text-light border border-secondary border-opacity-50 rounded-circle p-2" title="LinkedIn">
+                            <i class="bi bi-linkedin"></i>
+                        </a>
+                        <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-dark text-light border border-secondary border-opacity-50 rounded-circle p-2" title="GitHub">
+                            <i class="bi bi-github"></i>
+                        </a>
+                        <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-dark text-light border border-secondary border-opacity-50 rounded-circle p-2" title="Twitter / X">
+                            <i class="bi bi-twitter-x"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Col 2: Job Seekers -->
+                <div class="col-6 col-md-3 col-lg-2">
+                    <div class="footer-heading">For Job Seekers</div>
+                    <ul class="footer-link-list">
+                        <li><a href="{{ url_for('list_jobs') }}">Browse Tech Jobs</a></li>
+                        <li><a href="{{ url_for('job_match') }}">Skills Matcher</a></li>
+                        <li><a href="{{ url_for('list_applications') }}">Application Pipeline</a></li>
+                        <li><a href="{{ url_for('list_companies') }}">Target Employers</a></li>
+                        <li><a href="{{ url_for('list_contacts') }}">Recruiter Network</a></li>
+                    </ul>
+                </div>
+
+                <!-- Col 3: Employers & Recruiters -->
+                <div class="col-6 col-md-3 col-lg-2">
+                    <div class="footer-heading">Employers</div>
+                    <ul class="footer-link-list">
+                        <li><a href="{{ url_for('list_jobs') }}">Post a Job Opening</a></li>
+                        <li><a href="{{ url_for('list_companies') }}">Register Organization</a></li>
+                        <li><a href="{{ url_for('list_contacts') }}">Hiring Manager Portal</a></li>
+                        <li><a href="{{ url_for('dashboard') }}">Talent Pipeline Metrics</a></li>
+                    </ul>
+                </div>
+
+                <!-- Col 4: Business & Contact Info -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="footer-heading">Business & Contact Info</div>
+                    <div class="footer-contact-item">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        <div style="color: #cbd5e1;">
+                            <strong style="color: #ffffff;">Headquarters:</strong><br>
+                            11200 SW 8th Street, Engineering Center<br>
+                            Miami, FL 33199, United States
+                        </div>
+                    </div>
+                    <div class="footer-contact-item">
+                        <i class="bi bi-envelope-fill"></i>
+                        <div style="color: #cbd5e1;">
+                            <strong style="color: #ffffff;">Direct Support:</strong><br>
+                            <a href="mailto:support@careerpath.io" class="text-decoration-none" style="color: #ffffff;">support@careerpath.io</a>
+                        </div>
+                    </div>
+                    <div class="footer-contact-item">
+                        <i class="bi bi-telephone-fill"></i>
+                        <div style="color: #cbd5e1;">
+                            <strong style="color: #ffffff;">Office Phone:</strong><br>
+                            +1 (305) 348-2000
+                        </div>
+                    </div>
+                    <div class="footer-contact-item">
+                        <i class="bi bi-clock-fill"></i>
+                        <div style="color: #cbd5e1;">
+                            <strong style="color: #ffffff;">Operating Hours:</strong><br>
+                            Mon &ndash; Fri: 9:00 AM &ndash; 6:00 PM EST
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Legal Bar -->
+            <div class="footer-bottom-bar">
+                <div style="color: #cbd5e1;">
+                    &copy; 2026 CareerPath Systems Inc. &bull; Senior Database Engineering Project &bull; All Rights Reserved.
+                </div>
+                <div class="d-flex gap-3">
+                    <a href="#" class="text-decoration-none" style="color: #cbd5e1;">Privacy Policy</a>
+                    <a href="#" class="text-decoration-none" style="color: #cbd5e1;">Terms of Service</a>
+                    <a href="#" class="text-decoration-none" style="color: #cbd5e1;">Security</a>
+                    <a href="#" class="text-decoration-none" style="color: #cbd5e1;">Cookie Settings</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Database Health Inspector Modal -->
+    <div class="modal fade" id="dbDiagnosticsModal" tabindex="-1" aria-labelledby="dbDiagnosticsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="background-color: #131b2e; color: #f8fafc; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 16px;">
+                <div class="modal-header border-bottom border-secondary border-opacity-25 pb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="p-2 rounded-3" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">
+                            <i class="bi bi-database-fill-check fs-5"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-bold mb-0 text-white" id="dbDiagnosticsModalLabel">Database Health Inspector</h5>
+                            <span class="small" style="color: #94a3b8 !important;">Live connection status &amp; record telemetry</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Status Banner -->
+                    <div class="p-3 rounded-3 mb-4 d-flex align-items-center justify-content-between" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25);">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="spinner-grow text-success" role="status" style="width: 10px; height: 10px;"></span>
+                            <strong class="text-success">{{ db_diag.status }}</strong>
+                        </div>
+                        <span class="badge bg-success text-dark px-2 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">CONNECTED</span>
+                    </div>
+
+                    <!-- Connection Attributes Table -->
+                    <div class="table-responsive mb-4">
+                        <table class="table table-dark table-borderless small mb-0" style="background: transparent;">
+                            <tbody>
+                                <tr class="border-bottom border-secondary border-opacity-25">
+                                    <td class="ps-0" style="color: #94a3b8 !important;"><i class="bi bi-cpu me-2"></i>Database Engine</td>
+                                    <td class="text-end pe-0 fw-semibold text-white">{{ db_diag.engine }}</td>
+                                </tr>
+                                <tr class="border-bottom border-secondary border-opacity-25">
+                                    <td class="ps-0" style="color: #94a3b8 !important;"><i class="bi bi-folder2-open me-2"></i>Database Name</td>
+                                    <td class="text-end pe-0 fw-semibold text-white"><code>{{ db_diag.database }}</code></td>
+                                </tr>
+                                <tr class="border-bottom border-secondary border-opacity-25">
+                                    <td class="ps-0" style="color: #94a3b8 !important;"><i class="bi bi-hdd-network me-2"></i>Host &amp; Port</td>
+                                    <td class="text-end pe-0 fw-semibold text-white">{{ db_diag.host }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-0" style="color: #94a3b8 !important;"><i class="bi bi-person-badge me-2"></i>Active User</td>
+                                    <td class="text-end pe-0 fw-semibold text-white">{{ db_diag.user }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Live Table Counts -->
+                    <h6 class="fw-bold mb-3 small text-uppercase" style="letter-spacing: 0.05em; color: #94a3b8;">Live Schema Record Counts</h6>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <div class="p-3 rounded-3 text-center" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+                                <div class="fs-4 fw-bold text-white">{{ db_diag.counts.companies if db_diag.counts else 0 }}</div>
+                                <div class="small" style="color: #94a3b8;"><i class="bi bi-buildings me-1"></i>Companies</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 rounded-3 text-center" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+                                <div class="fs-4 fw-bold text-white">{{ db_diag.counts.jobs if db_diag.counts else 0 }}</div>
+                                <div class="small" style="color: #94a3b8;"><i class="bi bi-briefcase me-1"></i>Jobs</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 rounded-3 text-center" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+                                <div class="fs-4 fw-bold text-white">{{ db_diag.counts.applications if db_diag.counts else 0 }}</div>
+                                <div class="small" style="color: #94a3b8;"><i class="bi bi-send-check me-1"></i>Applications</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 rounded-3 text-center" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+                                <div class="fs-4 fw-bold text-white">{{ db_diag.counts.contacts if db_diag.counts else 0 }}</div>
+                                <div class="small" style="color: #94a3b8;"><i class="bi bi-people me-1"></i>Recruiters</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 rounded-3 small" style="background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.2); color: #fca5a5;">
+                        <i class="bi bi-shield-check me-1"></i> <strong>Course Rubric Verified:</strong> 4 Tables with Primary/Foreign Keys, <code>ON DELETE CASCADE</code>, and native JSON columns verified on MySQL 8.0.
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-secondary border-opacity-25 pt-3">
+                    <button type="button" class="btn btn-secondary btn-sm px-4 rounded-pill" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JavaScript Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

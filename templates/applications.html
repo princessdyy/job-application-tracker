@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+
+{% block title %}Applications - CareerPath{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h1 class="fw-bold fs-2 mb-1 text-white">Application Pipeline</h1>
+        <div class="text-muted">Track submission milestones, resume versions, and interview rounds.</div>
+    </div>
+    <button type="button" class="btn-brand-primary" data-bs-toggle="modal" data-bs-target="#addAppModal">
+        <i class="bi bi-plus-lg me-1"></i> Track New Application
+    </button>
+</div>
+
+<!-- Status Filter Bar -->
+<div class="content-card mb-4 p-3">
+    <form method="GET" action="{{ url_for('list_applications') }}" class="row g-2 align-items-center">
+        <div class="col-md-9 col-lg-10">
+            <div class="input-group">
+                <label class="input-group-text" for="statusFilter"><i class="bi bi-funnel me-1 text-muted"></i>Filter by Pipeline Stage</label>
+                <select name="status" id="statusFilter" class="form-select">
+                    <option value="">All Application Stages ({{ applications|length }} Total)</option>
+                    {% for st in ['Applied', 'Screening', 'Interview', 'Offer', 'Rejected', 'Withdrawn'] %}
+                        <option value="{{ st }}" {% if selected_status == st %}selected{% endif %}>{{ st }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="col-md-3 col-lg-2 d-flex gap-2">
+            <button type="submit" class="btn-brand-primary w-100 py-2">Apply Filter</button>
+            {% if selected_status %}
+                <a href="{{ url_for('list_applications') }}" class="btn btn-outline-secondary text-light">Reset</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Applications Table -->
+<div class="content-card mb-5">
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th class="ps-4">Job Title & Target Company</th>
+                    <th>Date Applied</th>
+                    <th>Pipeline Status</th>
+                    <th>Resume & Materials</th>
+                    <th>Interview Notes (JSON)</th>
+                    <th class="text-end pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if applications %}
+                    {% for app in applications %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-white">{{ app.job_title }}</div>
+                            <div class="text-muted small">
+                                <i class="bi bi-building me-1"></i>{{ app.company_name }}
+                                <span class="badge bg-dark text-secondary border border-secondary border-opacity-25 ms-1">{{ app.job_type }}</span>
+                            </div>
+                        </td>
+                        <td class="text-secondary fw-semibold">{{ app.application_date }}</td>
+                        <td>
+                            <span class="status-pill {{ app.status }}">{{ app.status }}</span>
+                        </td>
+                        <td>
+                            <div class="small fw-semibold text-white">
+                                <i class="bi bi-file-earmark-pdf text-danger me-1"></i>{{ app.resume_version or 'Standard' }}
+                            </div>
+                            <div class="small text-muted mt-1">
+                                {% if app.cover_letter_sent %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-check2"></i> Cover Letter Sent</span>
+                                {% else %}
+                                    <span class="badge bg-dark text-muted border border-secondary border-opacity-25">No Cover Letter</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td style="max-width: 280px;">
+                            {% set iv_list = app.interview_data|from_json %}
+                            {% if iv_list and iv_list is iterable and iv_list|length > 0 %}
+                                <div class="small">
+                                    {% for round in iv_list %}
+                                        <div class="mb-1">
+                                            <span class="badge bg-dark text-light border border-secondary border-opacity-25 me-1">{{ round.round or 'Round' }}</span>
+                                            <span class="text-muted">{{ round.date or '' }}</span>
+                                            {% if round.notes %}
+                                                <div class="text-truncate text-secondary fst-italic" style="max-width: 250px;" title="{{ round.notes }}">
+                                                    "{{ round.notes }}"
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <span class="text-muted small fst-italic">No interview stages yet</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <button type="button" class="btn btn-sm btn-outline-secondary me-1 text-light border-opacity-50" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#editAppModal{{ app.application_id }}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#deleteAppModal{{ app.application_id }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- Edit Application Modal -->
+                    <div class="modal fade" id="editAppModal{{ app.application_id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                            <div class="modal-content">
+                                <form action="{{ url_for('edit_application', app_id=app.application_id) }}" method="POST">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title fw-bold">Update Application #{{ app.application_id }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row g-3 mb-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold text-white">Job Position <span class="text-danger">*</span></label>
+                                                <select name="job_id" class="form-select" required>
+                                                    {% for j in jobs %}
+                                                        <option value="{{ j.job_id }}" {% if j.job_id == app.job_id %}selected{% endif %}>
+                                                            {{ j.job_title }} ({{ j.company_name }})
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold text-white">Application Date <span class="text-danger">*</span></label>
+                                                <input type="date" name="application_date" class="form-control" value="{{ app.application_date }}" required>
+                                            </div>
+                                        </div>
+                                        <div class="row g-3 mb-3">
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold text-white">Pipeline Status <span class="text-danger">*</span></label>
+                                                <select name="status" class="form-select" required>
+                                                    {% for st in ['Applied', 'Screening', 'Interview', 'Offer', 'Rejected', 'Withdrawn'] %}
+                                                        <option value="{{ st }}" {% if app.status == st %}selected{% endif %}>{{ st }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div class="col-md-5">
+                                                <label class="form-label fw-semibold text-white">Resume Version</label>
+                                                <input type="text" name="resume_version" class="form-control" value="{{ app.resume_version or '' }}" placeholder="e.g. SWE_Resume_v2.pdf">
+                                            </div>
+                                            <div class="col-md-3 d-flex align-items-center mt-4">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="cover_letter_sent" value="1" id="clEdit{{ app.application_id }}" {% if app.cover_letter_sent %}checked{% endif %}>
+                                                    <label class="form-check-label fw-semibold text-white" for="clEdit{{ app.application_id }}">
+                                                        Cover Letter Sent
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold text-white">Interview Data (JSON)</label>
+                                            <textarea name="interview_data" class="form-control font-monospace" rows="4">{{ app.interview_data or '[]' }}</textarea>
+                                            <div class="form-text small text-muted">Stored natively in MySQL JSON column. Format rounds, dates, and notes.</div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-outline-secondary text-light border-opacity-50" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn-brand-primary">Save Application</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delete Application Modal -->
+                    <div class="modal fade" id="deleteAppModal{{ app.application_id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <form action="{{ url_for('delete_application', app_id=app.application_id) }}" method="POST">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title fw-bold text-danger"><i class="bi bi-trash-fill me-2"></i>Delete Application</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p class="text-white">Are you sure you want to delete the application record for <strong class="text-danger">{{ app.job_title }}</strong> at {{ app.company_name }}?</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-outline-secondary text-light border-opacity-50" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-send-x fs-1 d-block mb-2 text-danger opacity-50"></i>
+                            No applications tracked under this stage filter.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Application Modal -->
+<div class="modal fade" id="addAppModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form action="{{ url_for('add_application') }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Track Job Application</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-white">Job Posting <span class="text-danger">*</span></label>
+                            <select name="job_id" class="form-select" required>
+                                <option value="" disabled selected>Select Position...</option>
+                                {% for j in jobs %}
+                                    <option value="{{ j.job_id }}">{{ j.job_title }} &bull; {{ j.company_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-white">Application Date <span class="text-danger">*</span></label>
+                            <input type="date" name="application_date" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-white">Initial Status</label>
+                            <select name="status" class="form-select">
+                                <option value="Applied" selected>Applied</option>
+                                <option value="Screening">Screening</option>
+                                <option value="Interview">Interview</option>
+                                <option value="Offer">Offer</option>
+                                <option value="Rejected">Rejected</option>
+                                <option value="Withdrawn">Withdrawn</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold text-white">Resume Version</label>
+                            <input type="text" name="resume_version" class="form-control" placeholder="e.g. SWE_Resume_v2.pdf">
+                        </div>
+                        <div class="col-md-3 d-flex align-items-center mt-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="cover_letter_sent" value="1" id="clAdd">
+                                <label class="form-check-label fw-semibold text-white" for="clAdd">
+                                    Cover Letter Sent
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold mt-4 mb-2 text-danger"><i class="bi bi-calendar-plus me-1"></i>Initial Interview Details (Optional)</h6>
+                    <div class="row g-2 mb-2">
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted">Round Name</label>
+                            <input type="text" name="interview_round" class="form-control" placeholder="e.g. Recruiter Screen, Technical Assessment">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted">Interview Date</label>
+                            <input type="date" name="interview_date" class="form-control">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label small text-muted">Notes & Prep</label>
+                        <input type="text" name="interview_notes" class="form-control" placeholder="Prep topics, interviewer name, focus areas">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary text-light border-opacity-50" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-brand-primary">Track Application</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

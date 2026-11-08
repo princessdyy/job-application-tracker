@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - CareerPath{% endblock %}
+
+{% block content %}
+<!-- Professional Enterprise Hero Section with High-Quality Visual Imagery -->
+<div class="enterprise-hero -mx-lg-4 px-lg-4">
+    <div class="row align-items-center g-4">
+        <!-- Left: Search & Headings -->
+        <div class="col-lg-7">
+            <div class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill fw-bold text-uppercase letter-spacing-1 mb-3">
+                <i class="bi bi-stars me-1"></i> Career Intelligence & Tracking
+            </div>
+            <h1 class="hero-heading">
+                Find your next role. <br>
+                <span style="color: var(--brand-primary);">Track every step to the offer.</span>
+            </h1>
+            <p class="hero-subtitle-text">
+                Manage your job search across tech employers, compare technical skill requirements in real time, and stay ahead of your interview schedule.
+            </p>
+
+            <!-- Multi-Field Search Card -->
+            <form method="GET" action="{{ url_for('list_jobs') }}" class="hero-search-card d-flex flex-column flex-md-row align-items-center mb-3">
+                <div class="d-flex align-items-center flex-grow-1 w-100 px-2">
+                    <i class="bi bi-search text-muted me-2 fs-5"></i>
+                    <input type="text" name="keyword" class="form-control hero-search-input" placeholder="Role, skill, or keyword (e.g. Python, SQL, React)">
+                </div>
+                <div class="hero-search-sep d-none d-md-block"></div>
+                <div class="d-flex align-items-center flex-grow-1 w-100 px-2 mt-2 mt-md-0">
+                    <i class="bi bi-geo-alt text-muted me-2 fs-5"></i>
+                    <input type="text" name="location" class="form-control hero-search-input" placeholder="Location or Remote">
+                </div>
+                <div class="w-100 w-md-auto mt-2 mt-md-0">
+                    <button type="submit" class="btn-brand-primary w-100 py-3 px-4">
+                        Search jobs
+                    </button>
+                </div>
+            </form>
+
+            <!-- Quick Filter Chips -->
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <span class="small text-muted fw-bold">Trending Searches:</span>
+                <a href="{{ url_for('job_match', skills='Python, SQL, Flask') }}" class="btn btn-sm btn-outline-secondary rounded-pill py-1 px-3 text-light border-opacity-50 fw-semibold">
+                    Python Developer
+                </a>
+                <a href="{{ url_for('job_match', skills='SQL, Tableau, Excel, Data Modeling') }}" class="btn btn-sm btn-outline-secondary rounded-pill py-1 px-3 text-light border-opacity-50 fw-semibold">
+                    Data Analyst
+                </a>
+                <a href="{{ url_for('list_jobs') }}" class="btn btn-sm btn-outline-secondary rounded-pill py-1 px-3 text-light border-opacity-50 fw-semibold">
+                    Full-Time Roles
+                </a>
+                <a href="{{ url_for('job_match') }}" class="btn btn-sm btn-danger rounded-pill py-1 px-3 fw-semibold text-white">
+                    <i class="bi bi-bullseye me-1"></i> Match My Resume
+                </a>
+            </div>
+        </div>
+
+        <!-- Right: Modern Visual Career Photography -->
+        <div class="col-lg-5">
+            <div class="hero-img-box">
+                <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=900&q=80" 
+                     alt="Collaborative Software Team and Engineering Workspace">
+                <!-- Floating Real-Time Pipeline Metric Badge -->
+                <div class="hero-floating-stat">
+                    <div class="kpi-icon emerald" style="width: 44px; height: 44px; font-size: 1.25rem;">
+                        <i class="bi bi-award-fill"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold text-white">{{ stats.offer_count or 0 }} Active Job Offers</div>
+                        <div class="small text-muted">{{ stats.interview_count or 0 }} interviews in progress</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trending Career Sectors Grid -->
+<div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold mb-0 text-white">Explore High-Growth Sectors</h4>
+        <a href="{{ url_for('list_jobs') }}" class="text-decoration-none fw-semibold small" style="color: var(--brand-primary);">
+            View all categories <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-sm-6 col-md-3">
+            <a href="{{ url_for('job_match', skills='Python, Flask, MySQL, Git') }}" class="sector-card">
+                <div class="sector-icon-box" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">
+                    <i class="bi bi-code-square"></i>
+                </div>
+                <div>
+                    <div class="sector-title">Software Engineering</div>
+                    <div class="sector-count">Full Stack &bull; Backend</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <a href="{{ url_for('job_match', skills='SQL, Tableau, Excel, Data Modeling') }}" class="sector-card">
+                <div class="sector-icon-box" style="background: rgba(168, 85, 247, 0.15); color: #c084fc;">
+                    <i class="bi bi-bar-chart-steps"></i>
+                </div>
+                <div>
+                    <div class="sector-title">Data & Analytics</div>
+                    <div class="sector-count">BI &bull; SQL Modeling</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <a href="{{ url_for('job_match', skills='AWS, Docker, Linux, Kubernetes') }}" class="sector-card">
+                <div class="sector-icon-box" style="background: rgba(8, 145, 178, 0.15); color: #38bdf8;">
+                    <i class="bi bi-cloud-arrow-up"></i>
+                </div>
+                <div>
+                    <div class="sector-title">Cloud & Infrastructure</div>
+                    <div class="sector-count">DevOps &bull; AWS &bull; Linux</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <a href="{{ url_for('job_match', skills='HTML, CSS, JavaScript, Python') }}" class="sector-card">
+                <div class="sector-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">
+                    <i class="bi bi-mortarboard"></i>
+                </div>
+                <div>
+                    <div class="sector-title">University / Internships</div>
+                    <div class="sector-count">Early Career &bull; Summer 2027</div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Primary Metric KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-2">
+        <div class="kpi-box">
+            <div>
+                <div class="kpi-label">Total Applied</div>
+                <div class="kpi-value">{{ stats.total_apps or 0 }}</div>
+            </div>
+            <div class="kpi-icon rose">
+                <i class="bi bi-send-fill"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="kpi-box">
+            <div>
+                <div class="kpi-label">Screening</div>
+                <div class="kpi-value">{{ stats.screening_count or 0 }}</div>
+            </div>
+            <div class="kpi-icon amber">
+                <i class="bi bi-telephone-inbound-fill"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="kpi-box">
+            <div>
+                <div class="kpi-label">Interviews</div>
+                <div class="kpi-value">{{ stats.interview_count or 0 }}</div>
+            </div>
+            <div class="kpi-icon purple">
+                <i class="bi bi-person-video3"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="kpi-box">
+            <div>
+                <div class="kpi-label">Offers</div>
+                <div class="kpi-value text-success">{{ stats.offer_count or 0 }}</div>
+            </div>
+            <div class="kpi-icon emerald">
+                <i class="bi bi-award-fill"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="kpi-box">
+            <div>
+                <div class="kpi-label">Companies</div>
+                <div class="kpi-value">{{ company_count or 0 }}</div>
+            </div>
+            <div class="kpi-icon blue">
+                <i class="bi bi-buildings"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="kpi-box">
+            <div>
+                <div class="kpi-label">Active Roles</div>
+                <div class="kpi-value">{{ job_count or 0 }}</div>
+            </div>
+            <div class="kpi-icon slate">
+                <i class="bi bi-briefcase-fill"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Recent Applications Table -->
+    <div class="col-lg-8">
+        <div class="content-card h-100">
+            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-white"><i class="bi bi-clock-history me-2 text-danger"></i>Recent Application Activity</h5>
+                <a href="{{ url_for('list_applications') }}" class="btn btn-sm btn-outline-secondary py-1 px-3 rounded-pill fw-semibold text-light border-opacity-50">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Job Title & Company</th>
+                            <th>Applied Date</th>
+                            <th>Status</th>
+                            <th>Resume</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if recent_apps %}
+                            {% for app in recent_apps %}
+                            <tr>
+                                <td class="ps-4 py-3">
+                                    <div class="fw-bold text-white">{{ app.job_title }}</div>
+                                    <div class="text-muted small">
+                                        <i class="bi bi-building me-1"></i>{{ app.company_name }} &bull; {{ app.city }}, {{ app.state }}
+                                    </div>
+                                </td>
+                                <td class="text-secondary">{{ app.application_date }}</td>
+                                <td>
+                                    <span class="status-pill {{ app.status }}">{{ app.status }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-dark text-secondary border border-secondary border-opacity-25">
+                                        <i class="bi bi-file-earmark-text me-1"></i>{{ app.resume_version or 'Standard' }}
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="{{ url_for('list_applications') }}" class="btn btn-sm btn-outline-secondary py-1 px-2 rounded-circle text-light">
+                                        <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-2 d-block mb-2 text-danger opacity-50"></i>
+                                    No applications tracked yet. Start your first application tracking!
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Sidebar: Interview Schedule & Quick Access -->
+    <div class="col-lg-4">
+        <!-- Interviews from JSON -->
+        <div class="content-card mb-4">
+            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-white"><i class="bi bi-calendar-event me-2" style="color: var(--brand-primary);"></i>Interview Schedule</h5>
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold">{{ interviews|length }} Stages</span>
+            </div>
+            <div class="card-body pt-0 px-4">
+                {% if interviews %}
+                    <ul class="list-group list-group-flush">
+                        {% for iv in interviews %}
+                        <li class="list-group-item px-0 py-3">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <span class="badge bg-dark text-light border border-secondary border-opacity-25 fw-bold">{{ iv.round }}</span>
+                                <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>{{ iv.date }}</small>
+                            </div>
+                            <div class="fw-bold text-white">{{ iv.job_title }}</div>
+                            <div class="small text-muted mb-1">{{ iv.company_name }}</div>
+                            {% if iv.notes %}
+                            <div class="small bg-dark bg-opacity-50 p-2 rounded text-secondary fst-italic border border-secondary border-opacity-25">
+                                "{{ iv.notes }}"
+                            </div>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-calendar-check fs-3 d-block mb-2 opacity-50"></i>
+                        No upcoming interviews recorded.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Access -->
+        <div class="content-card">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3 text-white"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Quick Actions</h6>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('list_companies') }}" class="btn btn-outline-secondary text-start py-2 fw-semibold text-light border-opacity-50">
+                        <i class="bi bi-buildings me-2 text-primary"></i>Manage Companies ({{ company_count }})
+                    </a>
+                    <a href="{{ url_for('list_jobs') }}" class="btn btn-outline-secondary text-start py-2 fw-semibold text-light border-opacity-50">
+                        <i class="bi bi-briefcase me-2 text-danger"></i>Manage Job Openings ({{ job_count }})
+                    </a>
+                    <a href="{{ url_for('list_contacts') }}" class="btn btn-outline-secondary text-start py-2 fw-semibold text-light border-opacity-50">
+                        <i class="bi bi-people me-2 text-success"></i>Recruiter Directory ({{ contact_count }})
+                    </a>
+                    <a href="{{ url_for('job_match') }}" class="btn btn-outline-secondary text-start py-2 fw-semibold text-light border-opacity-50">
+                        <i class="bi bi-bullseye me-2" style="color: var(--brand-primary);"></i>Calculate Skill Match %
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
