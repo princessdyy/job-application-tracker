@@ -1,6 +1,7 @@
 @echo off
 title Push Project to GitHub - CareerPath
 color 0b
+cd /d "%~dp0"
 echo ========================================================
 echo        CAREERPATH - GITHUB PUSH AUTOMATION
 echo ========================================================
@@ -21,14 +22,15 @@ if not exist "%GIT_EXE%" (
 echo [OK] Using Git at: "%GIT_EXE%"
 echo.
 
-echo [1/4] Configuring Git identity...
+echo [1/4] Configuring Git identity and upload buffer...
 "%GIT_EXE%" config user.name "princessdyy"
 "%GIT_EXE%" config user.email "princessdyy@users.noreply.github.com"
+"%GIT_EXE%" config http.postBuffer 524288000
 
 echo.
 echo [2/4] Staging and committing files...
 "%GIT_EXE%" add .
-"%GIT_EXE%" commit -m "Complete Job Application Tracker with Flask, MySQL 8.0, and Skills Matcher"
+"%GIT_EXE%" commit -m "Add project demo video and latest updates"
 
 echo.
 echo [3/4] Renaming branch to main...
